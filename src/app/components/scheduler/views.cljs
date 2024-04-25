@@ -17,16 +17,18 @@
 ;; Styles ----------------------------------------------------------------------
 
 (css wrapper-css []
-     "m-6 p-4"
+     "m-6 p-4 max-w-full"
      "bg-white rounded-md")
 
 (css timeslots-wrapper-css []
-     "relative flex flex-col center gap-3")
+     "relative flex flex-col center gap-3 overflow-x-scroll w-full"
+     {:width "100%"})
 
 (css timeslot-list-css []
      "flex"
      "rounded-md overflow-hidden"
-     ["li[data-type='overlapping']:first" {:background "red !important"}])
+     ["li[data-type='overlapping']:first" {:background "red !important"}]
+     {:width "fit-content"})
 
 (css timeslot-item-css [hue kind]
      "flex center items-center"
@@ -49,6 +51,8 @@
       :top 0
       :bottom 0
       :background "red"})
+
+(css time-marker-wrapper-css [] "relative w-fit")
 
 (css select-css []
      {"--color-tuna" "#373c43;"
@@ -205,19 +209,20 @@
         dest-timezones)
        ($ :button {:on-click #(set-dest-timezones! (conj dest-timezones source-tz))} "Add")
        ($ :div {:class (timeslots-wrapper-css)}
-          ($ :div {:class (time-marker-css)
-                   :style {:left (str time-offset "%")}})
-          ($ time-slots {:times source-hours
-                         :hue 78
-                         :overlaps overlaps})
-          (map-indexed
-           (fn [idx times]
-             ($ :div {:key idx}
-                ($ :div {:style {:display "flex"
-                                 :gap "10px"}}
-                   ($ :p (get dest-timezones idx))
-                   ($ :button {:on-click #(set-dest-timezones! (vec (remove-nth idx dest-timezones)))} "-"))
-                ($ time-slots {:times times
-                               :hue 120
-                               :overlaps overlaps})))
-           dest-hours)))))
+          ($ :div {:class (time-marker-wrapper-css)}
+             ($ :div {:class (time-marker-css)
+                      :style {:left (str time-offset "%")}})
+             ($ time-slots {:times source-hours
+                            :hue 78
+                            :overlaps overlaps})
+             (map-indexed
+              (fn [idx times]
+                ($ :div {:key idx}
+                   ($ :div {:style {:display "flex"
+                                    :gap "10px"}}
+                      ($ :p (get dest-timezones idx))
+                      ($ :button {:on-click #(set-dest-timezones! (vec (remove-nth idx dest-timezones)))} "-"))
+                   ($ time-slots {:times times
+                                  :hue 120
+                                  :overlaps overlaps})))
+              dest-hours))))))
