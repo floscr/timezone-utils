@@ -210,19 +210,24 @@
 
 (defui time-bars [{:keys [source-hours dest-timezones set-dest-timezones! dest-hours overlaps]}]
   (let [time-offset (time-percentage-of-current-day (t/time))
-        overlaps-ref (uix/use-ref [])]
+        overlaps-ref (uix/use-ref [])
+        container-ref (uix/use-ref)]
     (uix/use-layout-effect
      (fn [] ()
        (let [on-resize (fn []
-                         (let [idx (-> (/ (count @overlaps-ref) 2)
-                                       (Math/floor))
-                               el (nth @overlaps-ref idx)]
-                           (.scrollIntoView el #js {:inline "center"})))]
+                         (let [a (.-left (.getBoundingClientRect (first @overlaps-ref)))
+                               b (.-right (.getBoundingClientRect (last @overlaps-ref)))
+                               nodes-center (/ (+ a b) 2)
+                               container-center (/ (.-clientWidth @container-ref) 2)
+                               scroll-position (- (+ nodes-center (.-scrollLeft @container-ref)) container-center)]
+                           (.scrollTo @container-ref #js {:left scroll-position
+                                                          :inline "center"})))]
          (on-resize)
          (js/window.addEventListener "resize" on-resize)
          #(js/window.removeEventListener "resize" on-resize)))
      [])
-    ($ :div {:class (timeslots-wrapper-css)}
+    ($ :div {:class (timeslots-wrapper-css)
+             :ref container-ref}
        ($ :div {:class (time-marker-wrapper-css)}
           ($ :div {:class (time-marker-css)
                    :style {:left (str time-offset "%")}})
