@@ -72,7 +72,7 @@
        (logical-intersect)))
 
 (defui root [{:keys []}]
-  (let [my-timezones (day-hours "GMT+2")
+  (let [my-timezones (day-hours "UTC+02:00")
         ist-timezones (->> (day-hours "UTC+02:00")
                            (map #(t/in % "UTC+05:30")))
         overlaps (work-hours-intersections [my-timezones ist-timezones])]
