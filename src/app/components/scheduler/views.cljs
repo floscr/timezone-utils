@@ -36,7 +36,7 @@
 (css timeslots-wrapper-css []
      "relative flex flex-col center gap-3 overflow-x-scroll w-full"
      {:width "100%"
-      :max-width "600px"})
+      :max-width "800px"})
 
 (css timeslot-list-css []
      "flex"
