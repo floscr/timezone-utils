@@ -4,6 +4,7 @@
    ["react-select-me$default" :as select]
    [app.utils.css.core :refer-macros [css]]
    [ballpark.core :as bp]
+   [clojure.edn :as edn]
    [clojure.string :as str]
    [goog.string :as gstring]
    [js.Array]
@@ -158,11 +159,19 @@
 
 (defui root [{:keys []}]
   (let [[source-tz set-source-tz!] (uix/use-state "Europe/Vienna")
-        [dest-timezones set-dest-timezones!] (uix/use-state ["Asia/Kolkata"])
+        [dest-timezones set-dest-timezones!] (uix/use-state (or
+                                                             (some-> (js/localStorage.getItem "time_utils")
+                                                                     (edn/read-string)
+                                                                     :dest-timezones)
+                                                             ["Asia/Kolkata"]))
         source-hours (day-hours source-tz)
         dest-hours (map (fn [hours] (map #(t/in % hours) source-hours)) dest-timezones)
         overlaps (work-hours-intersections (into [source-hours] dest-hours))
         time-offset (time-percentage-of-current-day (t/time))]
+    (uix/use-effect
+     (fn [] ()
+       (js/localStorage.setItem "time_utils" {:dest-timezones dest-timezones}))
+     [dest-timezones])
     ($ :div {:class (wrapper-css)}
        ($ timezones-select {:value source-tz
                             :on-change set-source-tz!})
