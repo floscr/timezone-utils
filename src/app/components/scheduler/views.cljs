@@ -2,15 +2,16 @@
   (:require
    ["@js-joda/core" :as js-joda]
    ["react-select-me$default" :as select]
-   [ballpark.core :as bp]
    [app.utils.css.core :refer-macros [css]]
+   [ballpark.core :as bp]
+   [clojure.string :as str]
    [goog.string :as gstring]
    [js.Array]
+   [medley.core :refer [remove-nth]]
    [tick.core :as t]
    [tick.locale-en-us]
    [tick.timezone]
-   [uix.core :as uix :refer [$ defui]]
-   [clojure.string :as str]))
+   [uix.core :as uix :refer [$ defui]]))
 
 ;; Styles ----------------------------------------------------------------------
 
@@ -181,7 +182,10 @@
           (map-indexed
            (fn [idx times]
              ($ :div {:key idx}
-                ($ :p (get dest-timezones idx))
+                ($ :div {:style {:display "flex"
+                                 :gap "10px"}}
+                   ($ :p (get dest-timezones idx))
+                   ($ :button {:on-click #(set-dest-timezones! (vec (remove-nth idx dest-timezones)))} "-"))
                 ($ time-slots {:times times
                                :hue 120
                                :overlaps overlaps})))
