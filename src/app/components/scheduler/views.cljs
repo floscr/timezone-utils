@@ -183,6 +183,27 @@
                           :on-change on-change})
      ($ clock {:zone zone})))
 
+(defui time-bars [{:keys [source-hours dest-timezones set-dest-timezones! dest-hours overlaps]}]
+  (let [time-offset (time-percentage-of-current-day (t/time))]
+    ($ :div {:class (timeslots-wrapper-css)}
+       ($ :div {:class (time-marker-wrapper-css)}
+          ($ :div {:class (time-marker-css)
+                   :style {:left (str time-offset "%")}})
+          ($ time-slots {:times source-hours
+                         :hue 78
+                         :overlaps overlaps})
+          (map-indexed
+           (fn [idx times]
+             ($ :div {:key idx}
+                ($ :div {:style {:display "flex"
+                                 :gap "10px"}}
+                   ($ :p (get dest-timezones idx))
+                   ($ :button {:on-click #(set-dest-timezones! (vec (remove-nth idx dest-timezones)))} "-"))
+                ($ time-slots {:times times
+                               :hue 120
+                               :overlaps overlaps})))
+           dest-hours)))))
+
 (defui root [{:keys []}]
   (let [[source-tz set-source-tz!] (uix/use-state "Europe/Vienna")
         [dest-timezones set-dest-timezones!] (uix/use-state (or
@@ -192,8 +213,7 @@
                                                              ["Asia/Kolkata"]))
         source-hours (day-hours source-tz)
         dest-hours (map (fn [hours] (map #(t/in % hours) source-hours)) dest-timezones)
-        overlaps (work-hours-intersections (into [source-hours] dest-hours))
-        time-offset (time-percentage-of-current-day (t/time))]
+        overlaps (work-hours-intersections (into [source-hours] dest-hours))]
     (uix/use-effect
      (fn [] ()
        (js/localStorage.setItem "time_utils" {:dest-timezones dest-timezones}))
@@ -208,21 +228,8 @@
                                :on-change #(set-dest-timezones! (assoc dest-timezones idx %))}))
         dest-timezones)
        ($ :button {:on-click #(set-dest-timezones! (conj dest-timezones source-tz))} "Add")
-       ($ :div {:class (timeslots-wrapper-css)}
-          ($ :div {:class (time-marker-wrapper-css)}
-             ($ :div {:class (time-marker-css)
-                      :style {:left (str time-offset "%")}})
-             ($ time-slots {:times source-hours
-                            :hue 78
-                            :overlaps overlaps})
-             (map-indexed
-              (fn [idx times]
-                ($ :div {:key idx}
-                   ($ :div {:style {:display "flex"
-                                    :gap "10px"}}
-                      ($ :p (get dest-timezones idx))
-                      ($ :button {:on-click #(set-dest-timezones! (vec (remove-nth idx dest-timezones)))} "-"))
-                   ($ time-slots {:times times
-                                  :hue 120
-                                  :overlaps overlaps})))
-              dest-hours))))))
+       ($ time-bars {:source-hours source-hours
+                     :dest-timezones dest-timezones
+                     :set-dest-timezones! set-dest-timezones!
+                     :dest-hours dest-hours
+                     :overlaps overlaps}))))
