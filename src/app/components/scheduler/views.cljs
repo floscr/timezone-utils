@@ -16,13 +16,27 @@
 
 ;; Styles ----------------------------------------------------------------------
 
+(css button-css []
+     "px-2.5 py-0.5"
+     "text-base font-medium"
+     "rounded-full"
+     {"--focus" "oklch(68% 0.16 249.011)"
+      "--button" "oklch(85.23% 0.007 115.73)"
+      :background "var(--button)"
+      :color "oklch(from var(--button) calc(l - 0.55) c h)"
+      "&:hover" {:background "oklch(from var(--button) calc(l + 0.05) c h)"}
+      "&:focus" {:outline "none"
+                 :box-shadow "inset 0 0 0 1px white, 0 0 0 2px var(--focus)"}})
+
 (css wrapper-css []
+     "flex flex-col gap-3"
      "m-6 p-4 max-w-full"
      "bg-white rounded-md")
 
 (css timeslots-wrapper-css []
      "relative flex flex-col center gap-3 overflow-x-scroll w-full"
-     {:width "100%"})
+     {:width "100%"
+      :max-width "600px"})
 
 (css timeslot-list-css []
      "flex"
@@ -43,7 +57,7 @@
       "&:hover" {:background "oklch(from var(--pill) calc(l + 0.08) c h)"}})
 
 (css zone-select-wrapper-css []
-     "flex gap-3")
+     "flex items-center gap-3")
 
 (css time-marker-css []
      "absolute"
@@ -58,23 +72,30 @@
      {"--color-tuna" "#373c43;"
       "--color-seashell" "#f1f1f1"}
      [".dd__wrapper" {:position "relative"
-                      :max-width "300px"}]
+                      :width "100%"
+                      :min-width "220px"
+                      :max-width "500px"
+                      :cursor "default"
+                      :border-color "grey"}]
      [".dd__opened" {:border-radius "3px"
                      :border-color "var(--color-tuna)"
                      :color "var(--color-tuna);"}]
-     [".dd__selectControl" "flex items-center overflow-hidden"]
-     [".dd__list" {:position "absolute"
+     [".dd__selectControl" "flex items-center overflow-hidden border border-border rounded-md px-2 py-1 gap-3"]
+     [".dd__list" {:border "1px solid oklch(var(--border))"
+                   :position "absolute"
+                   :margin-top "4px"
                    :z-index 1
                    :background "white"
                    :overflow "auto"
                    "-webkit-overflow-scrolling" "touch"
                    :min-width "100%"
-                   :border "1px solid var(--color-tuna)"
                    :border-radius "3px"
                    :box-shadow "0 3px 7px 0 rgba(0, 0, 0, 0.08)"
                    :will-change "transform"}]
      [".dd__list.dd__opened" "block"]
-     [".dd__selected" "flex"]
+     [".dd__search" "w-full outline-none"]
+     [".dd__expandIcon" "opacity-40"]
+     [".dd__selected" "flex w-full"]
      {".dd__option" {:padding "2px"
                      :white-space "nowrap"
                      :cursor "pointer"}}
@@ -184,6 +205,9 @@
                           :on-change on-change})
      ($ clock {:zone zone})))
 
+(defui button [props]
+  ($ :button (merge {:class (button-css)} props)))
+
 (defui time-bars [{:keys [source-hours dest-timezones set-dest-timezones! dest-hours overlaps]}]
   (let [time-offset (time-percentage-of-current-day (t/time))
         overlaps-ref (uix/use-ref)]
@@ -208,7 +232,7 @@
                 ($ :div {:style {:display "flex"
                                  :gap "10px"}}
                    ($ :p (get dest-timezones idx))
-                   ($ :button {:on-click #(set-dest-timezones! (vec (remove-nth idx dest-timezones)))} "-"))
+                   ($ button {:on-click #(set-dest-timezones! (vec (remove-nth idx dest-timezones)))} "-"))
                 ($ time-slots {:times times
                                :hue 120
                                :overlaps overlaps})))
@@ -237,7 +261,7 @@
                                :zone tz
                                :on-change #(set-dest-timezones! (assoc dest-timezones idx %))}))
         dest-timezones)
-       ($ :button {:on-click #(set-dest-timezones! (conj dest-timezones source-tz))} "Add")
+       ($ button {:on-click #(set-dest-timezones! (conj dest-timezones source-tz))} "Add")
        ($ time-bars {:source-hours source-hours
                      :dest-timezones dest-timezones
                      :set-dest-timezones! set-dest-timezones!
