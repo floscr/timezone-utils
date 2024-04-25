@@ -137,7 +137,8 @@
     ($ :div {:class (select-css)}
        ($ select {:options options
                   :on-search on-search
-                  :searchable true}))))
+                  :searchable true
+                  :on-close #(set-options! zones)}))))
 
 (defui time-slots [{:keys [hue times overlaps]}]
   ($ :ol {:class (timeslot-list-css)}
