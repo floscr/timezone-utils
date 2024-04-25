@@ -10,9 +10,11 @@
 ;; Styles ----------------------------------------------------------------------
 
 (css wrapper-css []
-     "flex flex-col center gap-3"
      "p-3"
      "bg-white rounded-md overflow-hidden")
+
+(css timeslots-wrapper-css []
+     "relative flex flex-col center gap-3")
 
 (css timeslot-list-css []
      "flex"
@@ -30,6 +32,13 @@
       :color "oklch(from var(--pill) calc(l - 0.4) c h)"
       "&:hover" {:background "oklch(from var(--pill) calc(l + 0.08) c h)"}})
 
+(css time-marker-css []
+     "absolute"
+     {:width "1px"
+      :top 0
+      :bottom 0
+      :background "red"})
+
 ;; Helpers ---------------------------------------------------------------------
 
 (defn day-hours [timezone]
@@ -43,15 +52,38 @@
                     (map #(t/in % timezone))))]
     hours))
 
-;; Components ------------------------------------------------------------------
+(defn in-seconds [time]
+  (+ (* (t/hour time) 3600)
+     (* (t/minute time) 60)
+     (t/second time)))
+
+(defn day-seconds []
+  (->> (t/new-duration 1 :days)
+       (t/seconds)))
+
+(defn time-percentage-of-current-day [time]
+  (-> (/ (in-seconds time) (day-seconds))
+      (/ 1)
+      (* 100)))
+
+(defn logical-intersect [colls]
+  (apply map (fn [& vals] (every? true? vals)) colls))
+
+;; Logic -----------------------------------------------------------------------
 
 (defn work-hour? [timestamp]
   (let [h (t/hour timestamp)]
     (and (>= h 8)
          (<= h 18))))
 
-(defn logical-intersect [colls]
-  (apply map (fn [& vals] (every? true? vals)) colls))
+(defn work-hours-intersections
+  "Returns a list of booleans that will mark every overlapping working hours as true."
+  [times]
+  (->> times
+       (map (fn [hours] (map work-hour? hours)))
+       (logical-intersect)))
+
+;; Components ------------------------------------------------------------------
 
 (defui time-slots [{:keys [hue times overlaps]}]
   ($ :ol {:class (timeslot-list-css)}
@@ -65,21 +97,18 @@
                :key (str time)}
           ($ :span (t/format (t/formatter "HH:mm") time))))))
 
-(defn work-hours-intersections
-  "Returns a list of booleans that will mark every overlapping working hours as true."
-  [times]
-  (->> times
-       (map (fn [hours] (map work-hour? hours)))
-       (logical-intersect)))
-
 (defui root [{:keys []}]
   (let [my-timezones (day-hours "UTC+02:00")
         ist-timezones (map #(t/in % "UTC+05:30") my-timezones)
-        overlaps (work-hours-intersections [my-timezones ist-timezones])]
+        overlaps (work-hours-intersections [my-timezones ist-timezones])
+        time-offset (time-percentage-of-current-day (t/time))]
     ($ :div {:class (wrapper-css)}
-       ($ time-slots {:times my-timezones
-                      :hue 78
-                      :overlaps overlaps})
-       ($ time-slots {:times ist-timezones
-                      :hue 120
-                      :overlaps overlaps}))))
+       ($ :div {:class (timeslots-wrapper-css)}
+          ($ :div {:class (time-marker-css)
+                   :style {:left (str time-offset "%")}})
+          ($ time-slots {:times my-timezones
+                         :hue 78
+                         :overlaps overlaps})
+          ($ time-slots {:times ist-timezones
+                         :hue 120
+                         :overlaps overlaps})))))
