@@ -73,13 +73,12 @@
 
 (defui root [{:keys []}]
   (let [my-timezones (day-hours "UTC+02:00")
-        ist-timezones (->> (day-hours "UTC+02:00")
-                           (map #(t/in % "UTC+05:30")))
+        ist-timezones (map #(t/in % "UTC+05:30") my-timezones)
         overlaps (work-hours-intersections [my-timezones ist-timezones])]
     ($ :div {:class (wrapper-css)}
        ($ time-slots {:times my-timezones
-                      :hue "78.11"
+                      :hue 78
                       :overlaps overlaps})
        ($ time-slots {:times ist-timezones
-                      :hue "120.11"
+                      :hue 120
                       :overlaps overlaps}))))
