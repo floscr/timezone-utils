@@ -37,9 +37,10 @@
         hours (->> (t/new-duration 1 :days)
                    (t/hours)
                    (range)
-                   (map #(gstring/format "%02d:00" %))
-                   (map #(t/at today (t/time %)))
-                   (map #(t/in % timezone)))]
+                   (eduction
+                    (map #(gstring/format "%02d:00" %))
+                    (map #(t/at today (t/time %)))
+                    (map #(t/in % timezone))))]
     hours))
 
 ;; Components ------------------------------------------------------------------
