@@ -48,6 +48,9 @@
       :color "oklch(from var(--pill) calc(l - 0.4) c h)"
       "&:hover" {:background "oklch(from var(--pill) calc(l + 0.08) c h)"}})
 
+(css zone-select-wrapper-css []
+     "flex gap-3")
+
 (css time-marker-css []
      "absolute"
      {:width "1px"
@@ -171,11 +174,18 @@
         el-ref (uix/use-ref)]
     (uix/use-layout-effect
      (fn []
-       (reset! interval (js/setInterval (fn []
-                                          (set! (.-innerHTML ^js @el-ref) (time-clock {:zone zone}))) 1000))
+       (let [update-time! #(set! (.-innerHTML ^js @el-ref) (time-clock {:zone zone}))]
+         (update-time!)
+         (reset! interval (js/setInterval update-time! 1000)))
        #(js/clearInterval @interval))
      [zone])
-    ($ :p {:ref el-ref} "FOo")))
+    ($ :span {:ref el-ref})))
+
+(defui time-zone-select [{:keys [zone on-change]}]
+  ($ :div {:class (zone-select-wrapper-css)}
+     ($ timezones-select {:value zone
+                          :on-change on-change})
+     ($ clock {:zone zone})))
 
 (defui root [{:keys []}]
   (let [[source-tz set-source-tz!] (uix/use-state "Europe/Vienna")
@@ -193,13 +203,12 @@
        (js/localStorage.setItem "time_utils" {:dest-timezones dest-timezones}))
      [dest-timezones])
     ($ :div {:class (wrapper-css)}
-       ($ clock)
-       ($ timezones-select {:value source-tz
+       ($ time-zone-select {:zone source-tz
                             :on-change set-source-tz!})
        (map-indexed
         (fn [idx tz]
-          ($ timezones-select {:key idx
-                               :value tz
+          ($ time-zone-select {:key (str idx "-" tz)
+                               :zone tz
                                :on-change #(set-dest-timezones! (assoc dest-timezones idx %))}))
         dest-timezones)
        ($ :button {:on-click #(set-dest-timezones! (conj dest-timezones source-tz))} "Add")
