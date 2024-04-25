@@ -157,6 +157,26 @@
                  :key (str time)}
             ($ :span (t/format (t/formatter "HH:mm") time)))))))
 
+(defn time-clock
+  ([] (time-clock nil))
+  ([{:keys [zone format]
+     :or {format "HH:mm"}}]
+   (let [now (cond-> (t/now)
+               zone (t/in zone))
+         time (t/time now)]
+     (t/format (t/formatter format) time))))
+
+(defui clock [{:keys [zone]}]
+  (let [interval (uix/use-ref)
+        el-ref (uix/use-ref)]
+    (uix/use-layout-effect
+     (fn []
+       (reset! interval (js/setInterval (fn []
+                                          (set! (.-innerHTML ^js @el-ref) (time-clock {:zone zone}))) 1000))
+       #(js/clearInterval @interval))
+     [zone])
+    ($ :p {:ref el-ref} "FOo")))
+
 (defui root [{:keys []}]
   (let [[source-tz set-source-tz!] (uix/use-state "Europe/Vienna")
         [dest-timezones set-dest-timezones!] (uix/use-state (or
@@ -173,6 +193,7 @@
        (js/localStorage.setItem "time_utils" {:dest-timezones dest-timezones}))
      [dest-timezones])
     ($ :div {:class (wrapper-css)}
+       ($ clock)
        ($ timezones-select {:value source-tz
                             :on-change set-source-tz!})
        (map-indexed
