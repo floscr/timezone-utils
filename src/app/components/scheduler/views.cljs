@@ -127,7 +127,8 @@
 
 (def zones (.getAvailableZoneIds (.-ZoneId js-joda)))
 
-(defui timezones-select [{:keys []}]
+(defui timezones-select [{:keys [on-change value]
+                          :or {on-change identity}}]
   (let [[options set-options!] (uix/use-state zones)
         on-search (fn [query]
                     (if (empty? (str/trim query))
@@ -135,8 +136,10 @@
                       (-> (js.Array/filter zones (fn [zone] (bp/quick-score zone query)))
                           (set-options!))))]
     ($ :div {:class (select-css)}
-       ($ select {:options options
+       ($ select {:value value
+                  :options options
                   :on-search on-search
+                  :on-change #(on-change (.-value %))
                   :searchable true
                   :on-close #(set-options! zones)}))))
 
@@ -153,18 +156,25 @@
             ($ :span (t/format (t/formatter "HH:mm") time)))))))
 
 (defui root [{:keys []}]
-  (let [my-timezones (day-hours "Europe/Vienna")
-        ist-timezones (map #(t/in % "Asia/Kolkata") my-timezones)
-        overlaps (work-hours-intersections [my-timezones ist-timezones])
+  (let [[source-tz set-source-tz!] (uix/use-state "Europe/Vienna")
+        [dest-timezones set-dest-timezones!] (uix/use-state "Asia/Kolkata")
+        source-hours (day-hours source-tz)
+        dest-hours [(map #(t/in % dest-timezones) source-hours)]
+        overlaps (work-hours-intersections (into [source-hours] dest-hours))
         time-offset (time-percentage-of-current-day (t/time))]
     ($ :div {:class (wrapper-css)}
-       ($ timezones-select)
+       ($ timezones-select {:value source-tz
+                            :on-change set-source-tz!})
+       ($ timezones-select {:value dest-timezones
+                            :on-change set-dest-timezones!})
        ($ :div {:class (timeslots-wrapper-css)}
           ($ :div {:class (time-marker-css)
                    :style {:left (str time-offset "%")}})
-          ($ time-slots {:times my-timezones
+          ($ time-slots {:times source-hours
                          :hue 78
                          :overlaps overlaps})
-          ($ time-slots {:times ist-timezones
-                         :hue 120
-                         :overlaps overlaps})))))
+          (for [times dest-hours]
+            ($ time-slots {:key (str times)
+                           :times times
+                           :hue 120
+                           :overlaps overlaps}))))))
