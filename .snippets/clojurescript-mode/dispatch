@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: dispatch
+# key: di
+# --
+(dispatch [$0])
