@@ -16,16 +16,8 @@
 
 ;; Styles ----------------------------------------------------------------------
 
-(css input-css []
-     "flex"
-     "h-9 w-full px-3 py-1"
-     "text-sm text-primary shadow-sm rounded-md bg-background border border-solid border-input"
-     ["&::placeholder" "text-muted-foreground"]
-     ["&:disabled" "cursor-not-allowed opacity-50"]
-     ["&:focus-visible" "ring-0"])
-
 (css wrapper-css []
-     "p-3"
+     "m-6 p-4"
      "bg-white rounded-md")
 
 (css timeslots-wrapper-css []
