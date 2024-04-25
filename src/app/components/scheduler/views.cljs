@@ -157,24 +157,32 @@
 
 (defui root [{:keys []}]
   (let [[source-tz set-source-tz!] (uix/use-state "Europe/Vienna")
-        [dest-timezones set-dest-timezones!] (uix/use-state "Asia/Kolkata")
+        [dest-timezones set-dest-timezones!] (uix/use-state ["Asia/Kolkata"])
         source-hours (day-hours source-tz)
-        dest-hours [(map #(t/in % dest-timezones) source-hours)]
+        dest-hours (map (fn [hours] (map #(t/in % hours) source-hours)) dest-timezones)
         overlaps (work-hours-intersections (into [source-hours] dest-hours))
         time-offset (time-percentage-of-current-day (t/time))]
     ($ :div {:class (wrapper-css)}
        ($ timezones-select {:value source-tz
                             :on-change set-source-tz!})
-       ($ timezones-select {:value dest-timezones
-                            :on-change set-dest-timezones!})
+       (map-indexed
+        (fn [idx tz]
+          ($ timezones-select {:key idx
+                               :value tz
+                               :on-change #(set-dest-timezones! (assoc dest-timezones idx %))}))
+        dest-timezones)
+       ($ :button {:on-click #(set-dest-timezones! (conj dest-timezones source-tz))} "Add")
        ($ :div {:class (timeslots-wrapper-css)}
           ($ :div {:class (time-marker-css)
                    :style {:left (str time-offset "%")}})
           ($ time-slots {:times source-hours
                          :hue 78
                          :overlaps overlaps})
-          (for [times dest-hours]
-            ($ time-slots {:key (str times)
-                           :times times
-                           :hue 120
-                           :overlaps overlaps}))))))
+          (map-indexed
+           (fn [idx times]
+             ($ :div {:key idx}
+                ($ :p (get dest-timezones idx))
+                ($ time-slots {:times times
+                               :hue 120
+                               :overlaps overlaps})))
+           dest-hours)))))
