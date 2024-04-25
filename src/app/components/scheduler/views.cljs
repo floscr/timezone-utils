@@ -1,25 +1,38 @@
 (ns app.components.scheduler.views
   (:require
    ["@js-joda/core" :as js-joda]
+   ["react-select-me$default" :as select]
+   [ballpark.core :as bp]
    [app.utils.css.core :refer-macros [css]]
+   [goog.string :as gstring]
+   [js.Array]
    [tick.core :as t]
    [tick.locale-en-us]
    [tick.timezone]
-   [goog.string :as gstring]
-   [uix.core :as uix :refer [$ defui]]))
+   [uix.core :as uix :refer [$ defui]]
+   [clojure.string :as str]))
 
 ;; Styles ----------------------------------------------------------------------
 
+(css input-css []
+     "flex"
+     "h-9 w-full px-3 py-1"
+     "text-sm text-primary shadow-sm rounded-md bg-background border border-solid border-input"
+     ["&::placeholder" "text-muted-foreground"]
+     ["&:disabled" "cursor-not-allowed opacity-50"]
+     ["&:focus-visible" "ring-0"])
+
 (css wrapper-css []
      "p-3"
-     "bg-white rounded-md overflow-hidden")
+     "bg-white rounded-md")
 
 (css timeslots-wrapper-css []
      "relative flex flex-col center gap-3")
 
 (css timeslot-list-css []
      "flex"
-     "rounded-md overflow-hidden")
+     "rounded-md overflow-hidden"
+     ["li[data-type='overlapping']:first" {:background "red !important"}])
 
 (css timeslot-item-css [hue kind]
      "flex center items-center"
@@ -39,6 +52,32 @@
       :top 0
       :bottom 0
       :background "red"})
+
+(css select-css []
+     {"--color-tuna" "#373c43;"
+      "--color-seashell" "#f1f1f1"}
+     [".dd__wrapper" {:position "relative"
+                      :max-width "300px"}]
+     [".dd__opened" {:border-radius "3px"
+                     :border-color "var(--color-tuna)"
+                     :color "var(--color-tuna);"}]
+     [".dd__selectControl" "flex items-center overflow-hidden"]
+     [".dd__list" {:position "absolute"
+                   :z-index 1
+                   :background "white"
+                   :overflow "auto"
+                   "-webkit-overflow-scrolling" "touch"
+                   :min-width "100%"
+                   :border "1px solid var(--color-tuna)"
+                   :border-radius "3px"
+                   :box-shadow "0 3px 7px 0 rgba(0, 0, 0, 0.08)"
+                   :will-change "transform"}]
+     [".dd__list.dd__opened" "block"]
+     [".dd__selected" "flex"]
+     {".dd__option" {:padding "2px"
+                     :white-space "nowrap"
+                     :cursor "pointer"}}
+     [".dd__option:hover" {:background "var(--color-seashell)"}])
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -86,24 +125,31 @@
 
 ;; Components ------------------------------------------------------------------
 
+(def zones (.getAvailableZoneIds (.-ZoneId js-joda)))
+
 (defui timezones-select [{:keys []}]
-  ($ :select
-     (for [zone (.getAvailableZoneIds (.-ZoneId js-joda))]
-       ($ :option
-          {:key zone :value zone}
-          zone))))
+  (let [[options set-options!] (uix/use-state zones)
+        on-search (fn [query]
+                    (if (empty? (str/trim query))
+                      (set-options! options)
+                      (-> (js.Array/filter zones (fn [zone] (bp/quick-score zone query)))
+                          (set-options!))))]
+    ($ :div {:class (select-css)}
+       ($ select {:options options
+                  :on-search on-search
+                  :searchable true}))))
 
 (defui time-slots [{:keys [hue times overlaps]}]
   ($ :ol {:class (timeslot-list-css)}
      (for [[time overlaps?] (map vector times overlaps)]
-       ($ :li {:class (timeslot-item-css
-                       hue
-                       (cond
-                         overlaps? :overlapping
-                         (work-hour? time) :active
-                         :else :muted))
-               :key (str time)}
-          ($ :span (t/format (t/formatter "HH:mm") time))))))
+       (let [type (cond
+                    overlaps? :overlapping
+                    (work-hour? time) :active
+                    :else :muted)]
+         ($ :li {:data-type (name type)
+                 :class (timeslot-item-css hue type)
+                 :key (str time)}
+            ($ :span (t/format (t/formatter "HH:mm") time)))))))
 
 (defui root [{:keys []}]
   (let [my-timezones (day-hours "Europe/Vienna")
