@@ -144,7 +144,7 @@
                   :searchable true
                   :on-close #(set-options! zones)}))))
 
-(defui time-slots [{:keys [hue times overlaps]}]
+(defui time-slots [{:keys [hue times overlaps overlaps-ref]}]
   ($ :ol {:class (timeslot-list-css)}
      (for [[time overlaps?] (map vector times overlaps)]
        (let [type (cond
@@ -153,6 +153,7 @@
                     :else :muted)]
          ($ :li {:data-type (name type)
                  :class (timeslot-item-css hue type)
+                 :ref (when overlaps? overlaps-ref)
                  :key (str time)}
             ($ :span (t/format (t/formatter "HH:mm") time)))))))
 
@@ -184,14 +185,23 @@
      ($ clock {:zone zone})))
 
 (defui time-bars [{:keys [source-hours dest-timezones set-dest-timezones! dest-hours overlaps]}]
-  (let [time-offset (time-percentage-of-current-day (t/time))]
+  (let [time-offset (time-percentage-of-current-day (t/time))
+        overlaps-ref (uix/use-ref)]
+    (uix/use-layout-effect
+     (fn [] ()
+       (let [on-resize #(.scrollIntoView @overlaps-ref #js {:inline "center"})]
+         (on-resize)
+         (js/window.addEventListener "resize" on-resize)
+         #(js/window.removeEventListener "resize" on-resize)))
+     [])
     ($ :div {:class (timeslots-wrapper-css)}
        ($ :div {:class (time-marker-wrapper-css)}
           ($ :div {:class (time-marker-css)
                    :style {:left (str time-offset "%")}})
           ($ time-slots {:times source-hours
                          :hue 78
-                         :overlaps overlaps})
+                         :overlaps overlaps
+                         :overlaps-ref overlaps-ref})
           (map-indexed
            (fn [idx times]
              ($ :div {:key idx}
