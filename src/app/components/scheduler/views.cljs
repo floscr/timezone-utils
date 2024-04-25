@@ -18,13 +18,13 @@
      "flex"
      "rounded-md overflow-hidden")
 
-(css timeslot-item-css [kind]
+(css timeslot-item-css [hue kind]
      "flex center items-center"
      "text-sm font-medium select-none"
      "w-12 h-6"
      {"--pill" (case kind
-                 :muted "oklch(80.93% 0.02 78.11)"
-                 "oklch(80.93% 0.099 78.11)")
+                 :muted (gstring/format "oklch(80.93% 0.02 %s)" hue)
+                 (gstring/format "oklch(80.93% 0.099 %s)" hue))
       :background "var(--pill)"
       :color "oklch(from var(--pill) calc(l - 0.4) c h)"
       "&:hover" {:background "oklch(from var(--pill) calc(l + 0.1) c h)"}})
@@ -41,33 +41,28 @@
                    (map #(t/in % timezone)))]
     hours))
 
-(def hour-timestamp-formatter (t/formatter "HH:mm"))
-
-(comment
-  (-> (t/now) (t/hour))
-  (-> (day-hours "GMT+2")
-      (first))
-  (let [a (-> (day-hours "GMT+2")
-              (first))
-        b (t/in a "UTC+05:30")]
-    [a b])
-  nil)
-
 ;; Components ------------------------------------------------------------------
 
-(defui time-slots [{:keys [times]}]
+(defn work-hour? [timestamp]
+  (let [h (t/hour timestamp)]
+    (and (>= h 8)
+         (<= h 18))))
+
+(defui time-slots [{:keys [hue times]}]
   ($ :ol {:class (timeslot-list-css)}
      (for [time times]
-       ($ :li {:class (timeslot-item-css (let [h (t/hour time)]
-                                           (cond
-                                             (< h 8) :muted
-                                             (> h 18) :muted
-                                             :else :active)))
+       ($ :li {:class (timeslot-item-css
+                       hue
+                       (if (work-hour? time) :active :muted))
                :key (str time)}
-          ($ :span (t/format hour-timestamp-formatter time))))))
+          ($ :span (t/format (t/formatter "HH:mm") time))))))
 
 (defui root [{:keys []}]
-  ($ :div {:class (wrapper-css)}
-     ($ time-slots {:times (day-hours "GMT+2")})
-     ($ time-slots {:times (->> (day-hours "UTC+02:00")
-                                (map #(t/in % "UTC+05:30")))})))
+  (let [my-timezones (day-hours "GMT+2")
+        ist-timezones (->> (day-hours "UTC+02:00")
+                           (map #(t/in % "UTC+05:30")))]
+    ($ :div {:class (wrapper-css)}
+       ($ time-slots {:times my-timezones
+                      :hue "78.11"})
+       ($ time-slots {:times ist-timezones
+                      :hue "120.11"}))))
