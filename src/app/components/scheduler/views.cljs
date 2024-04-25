@@ -1,5 +1,6 @@
 (ns app.components.scheduler.views
   (:require
+   ["@js-joda/core" :as js-joda]
    [app.utils.css.core :refer-macros [css]]
    [tick.core :as t]
    [tick.locale-en-us]
@@ -85,6 +86,13 @@
 
 ;; Components ------------------------------------------------------------------
 
+(defui timezones-select [{:keys []}]
+  ($ :select
+     (for [zone (.getAvailableZoneIds (.-ZoneId js-joda))]
+       ($ :option
+          {:key zone :value zone}
+          zone))))
+
 (defui time-slots [{:keys [hue times overlaps]}]
   ($ :ol {:class (timeslot-list-css)}
      (for [[time overlaps?] (map vector times overlaps)]
@@ -98,11 +106,12 @@
           ($ :span (t/format (t/formatter "HH:mm") time))))))
 
 (defui root [{:keys []}]
-  (let [my-timezones (day-hours "UTC+02:00")
-        ist-timezones (map #(t/in % "UTC+05:30") my-timezones)
+  (let [my-timezones (day-hours "Europe/Vienna")
+        ist-timezones (map #(t/in % "Asia/Kolkata") my-timezones)
         overlaps (work-hours-intersections [my-timezones ist-timezones])
         time-offset (time-percentage-of-current-day (t/time))]
     ($ :div {:class (wrapper-css)}
+       ($ timezones-select)
        ($ :div {:class (timeslots-wrapper-css)}
           ($ :div {:class (time-marker-css)
                    :style {:left (str time-offset "%")}})
