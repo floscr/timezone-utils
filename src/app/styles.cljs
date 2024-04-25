@@ -44,13 +44,13 @@
      "--spacing-64" "16rem"
 
      "--black" "0 0% 0%"
-     "--background" "0 0% 100%"
+     "--background" "92.28% 0.007 115.71"
      "--foreground" "240 10% 3.9%"
      "--card" "0 0% 100%"
      "--card-foreground" "240 10% 3.9%"
      "--popover" "0 0% 100%"
      "--popover-foreground" "240 10% 3.9%"
-     "--primary" "240 5.9% 10%"
+     "--primary" "70% 0.1 316"
      "--primary-foreground" "0 0% 98%"
      "--secondary" "240 4.8% 95.9%"
      "--secondary-foreground" "240 5.9% 10%"
@@ -96,6 +96,9 @@
               :outline "revert"
               :cursor "pointer"
               :box-sizing "inherit"}
+    "ul,ol" {:list-style-type "none"
+             :padding 0
+             :margin 0}
     "input" {:all "unset"
              :box-sizing "inherit"
              :cursor "text"}
@@ -106,13 +109,15 @@
     "html" {:box-sizing "border-box"}
     "*, *:before, *:after" {:box-sizing "inherit"}
     "html, *, :after, :before" {:border "0 solid oklch(var(--border))"}
-    "#root" {}
+    "#root" {:display "flex"
+             :align-items "center"
+             :justify-content "center"}
     "a" {:color "inherit"}
     :body {:margin 0
            :font-family "Geist,ui-sans-serif,system-ui,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\",\"Noto Color Emoji\""
            :line-height 1.5
            :color "hsl(var(--primary))"
-           :background "hsl(var(--background))"
+           :background "oklch(var(--background))"
            "-webkit-text-size-adjust" "100%"
            :text-rendering "optimizeLegibility"}
     "blockquote, dd, dl, figure, h1, h2, h3, h4, h5, h6, hr, p, pre" {:margin 0}}))
